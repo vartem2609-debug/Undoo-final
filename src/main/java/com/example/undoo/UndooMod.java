@@ -254,4 +254,49 @@ record SetTradePacket(String in, String out) implements CustomPacketPayload {
     public static final Type<SetTradePacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(UndooMod.MODID, "set_trade"));
     public static final StreamCodec<FriendlyByteBuf, SetTradePacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, SetTradePacket::in, ByteBufCodecs.STRING_UTF8, SetTradePacket::out, SetTradePacket::new);
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
-    public static void 
+    public static void  handle(SetTradePacket p, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> { if (ctx.player() instanceof ServerPlayer sp) { var v = sp.level().getEntitiesOfClass(Villager.class, sp.getBoundingBox().inflate(5)).stream().findFirst().orElse(null); if (v != null) { var o = new MerchantOffers(); o.add(new MerchantOffer(new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(p.in()))), new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(p.out()))), 100, 1, 0.05f)); v.setOffers(o); } } });
+    }
+}
+
+record SaveMobPacket(String name, String entityId, String mainHand, String offHand, String head, String chest, String legs, String feet) implements CustomPacketPayload {
+    public static final Type<SaveMobPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(UndooMod.MODID, "save_mob"));
+    public static final StreamCodec<FriendlyByteBuf, SaveMobPacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, SaveMobPacket::name, ByteBufCodecs.STRING_UTF8, SaveMobPacket::entityId, ByteBufCodecs.STRING_UTF8, SaveMobPacket::mainHand, ByteBufCodecs.STRING_UTF8, SaveMobPacket::offHand, ByteBufCodecs.STRING_UTF8, SaveMobPacket::head, ByteBufCodecs.STRING_UTF8, SaveMobPacket::chest, ByteBufCodecs.STRING_UTF8, SaveMobPacket::legs, ByteBufCodecs.STRING_UTF8, SaveMobPacket::feet, SaveMobPacket::new);
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    public static void handle(SaveMobPacket p, IPayloadContext ctx) { ctx.enqueueWork(() -> UndooMod.SAVED.add(new SavedMob(p.name(), p.entityId(), p.mainHand(), p.offHand(), p.head(), p.chest(), p.legs(), p.feet()))); }
+}
+
+record SpawnMobPacket(int idx) implements CustomPacketPayload {
+    public static final Type<SpawnMobPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(UndooMod.MODID, "spawn_mob"));
+    public static final StreamCodec<FriendlyByteBuf, SpawnMobPacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.INT, SpawnMobPacket::idx, SpawnMobPacket::new);
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    public static void handle(SpawnMobPacket p, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> { if (ctx.player() instanceof ServerPlayer sp && p.idx() < UndooMod.SAVED.size()) { SavedMob m = UndooMod.SAVED.get(p.idx()); var e = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(m.entityId())).create(sp.level()); if (e instanceof Mob mob) { mob.setPos(sp.getX(), sp.getY(), sp.getZ()); if(!m.mainHand().isEmpty()) mob.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(m.mainHand())))); if(!m.head().isEmpty()) mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(m.head())))); sp.level().addFreshEntity(mob); } } });
+    }
+}
+
+record DeleteMobPacket(int idx) implements CustomPacketPayload {
+    public static final Type<DeleteMobPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(UndooMod.MODID, "delete_mob"));
+    public static final StreamCodec<FriendlyByteBuf, DeleteMobPacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.INT, DeleteMobPacket::idx, DeleteMobPacket::new);
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    public static void handle(DeleteMobPacket p, IPayloadContext ctx) { ctx.enqueueWork(() -> { if (p.idx() < UndooMod.SAVED.size()) UndooMod.SAVED.remove(p.idx()); }); }
+}
+
+@EventBusSubscriber(modid = UndooMod.MODID, value = Dist.CLIENT)
+class KeyHandler {
+    public static final KeyMapping.Category CAT = new KeyMapping.Category(Identifier.fromNamespaceAndPath("undoo", "main"));
+    public static final KeyMapping KEY = new KeyMapping("key.undoo.open_menu", GLFW.GLFW_KEY_I, CAT);
+    @SubscribeEvent public static void reg(RegisterKeyMappingsEvent e) { e.registerCategory(CAT); e.register(KEY); }
+    @SubscribeEvent public static void tick(ClientTickEvent.Post e) {
+        while (KEY.consumeClick()) { var p = Minecraft.getInstance().player; if (p != null && p.getMainHandItem().getItem() instanceof BigTntItem) p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new TntMenu(id, inv), Component.literal("ТНТ"))); }
+    }
+    @SubscribeEvent public static void click(InputEvent.MouseButton.Pre e) {
+        if (e.getAction() == GLFW.GLFW_PRESS && e.getButton() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            var p = Minecraft.getInstance().player;
+            if (p != null && p.isShiftKeyDown() && Minecraft.getInstance().options.keyJump.isDown() && p.getMainHandItem().getItem() instanceof MagicWandItem) {
+                p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new TradeMenu(id, inv), Component.literal("Палочка")));
+                e.setCanceled(true);
+            }
+        }
+    }
+        }
