@@ -131,7 +131,8 @@ class NetherPortalItem extends Item {
     @Override 
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
-            ServerLevel n = sp.getServer().getLevel(Level.NETHER);
+            // Вместо sp.getServer() используем уровень игрока
+            ServerLevel n = sp.level().getServer().getLevel(Level.NETHER);
             if (n != null) sp.teleportTo(n, sp.getX() / 8, 100, sp.getZ() / 8, Set.of(), sp.getYRot(), sp.getXRot());
         }
         return InteractionResult.SUCCESS;
@@ -143,7 +144,7 @@ class EndPortalItem extends Item {
     @Override 
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
-            ServerLevel e = sp.getServer().getLevel(Level.END);
+            ServerLevel e = sp.level().getServer().getLevel(Level.END);
             if (e != null) sp.teleportTo(e, 1000, 100, 0, Set.of(), sp.getYRot(), sp.getXRot());
         }
         return InteractionResult.SUCCESS;
@@ -221,4 +222,4 @@ class KeyHandler {
             }
         }
     }
-    }
+}
