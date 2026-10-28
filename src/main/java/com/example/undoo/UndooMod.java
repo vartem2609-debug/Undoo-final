@@ -20,7 +20,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
-import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -50,8 +49,8 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 @Mod(UndooMod.MODID)
 public class UndooMod {
@@ -130,7 +129,7 @@ class NetherPortalItem extends Item {
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
             ServerLevel n = sp.level().getServer().getLevel(Level.NETHER);
-            if (n != null) sp.teleportTo(n, sp.getX() / 8, 100, sp.getZ() / 8, Set.<RelativeMovement>of(), sp.getYRot(), sp.getXRot(), true); // Добавлен true
+            if (n != null) sp.teleportTo(n, sp.getX() / 8, 100, sp.getZ() / 8, Collections.emptySet(), sp.getYRot(), sp.getXRot(), true);
         }
         return InteractionResult.SUCCESS;
     }
@@ -141,7 +140,7 @@ class EndPortalItem extends Item {
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
             ServerLevel e = sp.level().getServer().getLevel(Level.END);
-            if (e != null) sp.teleportTo(e, 1000, 100, 0, Set.<RelativeMovement>of(), sp.getYRot(), sp.getXRot(), true); // Добавлен true
+            if (e != null) sp.teleportTo(e, 1000, 100, 0, Collections.emptySet(), sp.getYRot(), sp.getXRot(), true);
         }
         return InteractionResult.SUCCESS;
     }
@@ -218,4 +217,4 @@ class KeyHandler {
             }
         }
     }
-    }
+            }
