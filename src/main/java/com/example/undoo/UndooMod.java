@@ -14,7 +14,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -64,7 +63,7 @@ public class UndooMod {
     public static final DeferredHolder<Item, Item> MEGA_ENCHANTER = ITEMS.register("mega_enchanter", () -> new MegaEnchanterItem(new Item.Properties()));
 
     public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, MODID);
-    public static final DeferredHolder<MenuType<?>, MenuType<TntMenu>> TNT_MENU = MENUS.register("tnt_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new TntMenu(id, inv, inv.player.getMainHandItem())));
+    public static final DeferredHolder<MenuType<?>, MenuType<TntMenu>> TNT_MENU = MENUS.register("tnt_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new TntMenu(id, inv)));
 
     public static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, MODID);
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Float>> EXPLOSION_POWER = COMPONENTS.register("explosion_power", () -> DataComponentType.<Float>builder().persistent(Codec.FLOAT).networkSynchronized(ByteBufCodecs.FLOAT).build());
@@ -119,7 +118,7 @@ class BigTntItem extends Item {
             return InteractionResult.SUCCESS;
         }
         if (!level.isClientSide() && player instanceof ServerPlayer sp) {
-            sp.openMenu(new SimpleMenuProvider((id, inv, p) -> new TntMenu(id, inv, stack), Component.literal("Сила взрыва")));
+            sp.openMenu(new SimpleMenuProvider((id, inv, p) -> new TntMenu(id, inv), Component.literal("Сила взрыва")));
         }
         return InteractionResult.SUCCESS;
     }
@@ -136,7 +135,7 @@ class NetherPortalItem extends Item {
     @Override 
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
-            ServerLevel n = sp.server.getLevel(Level.NETHER);
+            ServerLevel n = sp.getServer().getLevel(Level.NETHER);
             if (n != null) sp.teleportTo(n, sp.getX() / 8, 100, sp.getZ() / 8, Set.of(), sp.getYRot(), sp.getXRot());
         }
         return InteractionResult.SUCCESS;
@@ -148,7 +147,7 @@ class EndPortalItem extends Item {
     @Override 
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
-            ServerLevel e = sp.server.getLevel(Level.END);
+            ServerLevel e = sp.getServer().getLevel(Level.END);
             if (e != null) sp.teleportTo(e, 1000, 100, 0, Set.of(), sp.getYRot(), sp.getXRot());
         }
         return InteractionResult.SUCCESS;
@@ -173,38 +172,30 @@ class MegaEnchanterItem extends Item {
 }
 
 class TntMenu extends AbstractContainerMenu {
-    private final ItemStack tntStack;
-    public TntMenu(int id, Inventory inv, ItemStack stack) {
+    public TntMenu(int id, Inventory inv) {
         super(UndooMod.TNT_MENU.get(), id);
-        this.tntStack = stack;
         Container container = new SimpleContainer(1);
-        this.addSlot(new Slot(container, 0, 80, 20) { @Override public boolean mayPlace(ItemStack s) { return false; } @Override public ItemStack getItem() { return tntStack; } });
+        this.addSlot(new Slot(container, 0, 80, 20) { @Override public boolean mayPlace(ItemStack s) { return false; } });
         for (int i = 0; i < 3; ++i) { for (int j = 0; j < 9; ++j) { this.addSlot(new Slot(inv, j + i * 9 + 9, 8 + j * 18, 84 + i * 18)); } }
         for (int k = 0; k < 9; ++k) { this.addSlot(new Slot(inv, k, 8 + k * 18, 142)); }
     }
-    public ItemStack getTntStack() { return tntStack; }
     @Override public ItemStack quickMoveStack(Player p, int i) { return ItemStack.EMPTY; }
     @Override public boolean stillValid(Player p) { return true; }
 }
 
+@EventBusSubscriber(modid = UndooMod.MODID, value = Dist.CLIENT)
 class ClientStuff {
-    @EventBusSubscriber(modid = UndooMod.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ModBusEvents {
         public static final KeyMapping OPEN_MENU = new KeyMapping("key.undoo.open_menu", GLFW.GLFW_KEY_I, "category.undoo");
-        
-        @SubscribeEvent public static void regKeys(RegisterKeyMappingsEvent e) { 
-            e.register(OPEN_MENU); 
-        }
+        @SubscribeEvent public static void regKeys(RegisterKeyMappingsEvent e) { e.register(OPEN_MENU); }
     }
 
-    @EventBusSubscriber(modid = UndooMod.MODID, value = Dist.CLIENT)
     public static class GameBusEvents {
         @SubscribeEvent public static void onKey(ClientTickEvent.Post e) {
             while (ModBusEvents.OPEN_MENU.consumeClick()) {
                 var p = Minecraft.getInstance().player;
                 if (p != null && p.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof BigTntItem) {
-                    // Прямое открытие меню без сетевых пакетов
-                    p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new TntMenu(id, inv, p.getItemInHand(InteractionHand.MAIN_HAND)), Component.literal("Сила взрыва")));
+                    p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new TntMenu(id, inv), Component.literal("Сила взрыва")));
                 }
             }
         }
@@ -212,15 +203,15 @@ class ClientStuff {
 
     public static class TntScreen extends AbstractContainerScreen<TntMenu> {
         private float power;
-        public TntScreen(TntMenu m, Inventory i, Component t) { super(m, i, t); this.power = BigTntItem.getPower(m.getTntStack()); }
+        public TntScreen(TntMenu m, Inventory i, Component t) { super(m, i, t); this.power = 4f; }
         @Override protected void init() {
             super.init();
             int cx = width / 2, cy = height / 2;
             addRenderableWidget(new AbstractSliderButton(cx - 80, cy - 40, 160, 20, Component.literal("Сила: " + (int) power), (power - 1) / 499.0) {
                 @Override protected void updateMessage() { setMessage(Component.literal("Сила: " + (int) (this.value * 499 + 1))); }
-                @Override protected void applyValue() { power = (float) (this.value * 499 + 1); BigTntItem.setPower(menu.getTntStack(), power); }
+                @Override protected void applyValue() { power = (float) (this.value * 499 + 1); }
             });
-            addRenderableWidget(Button.builder(Component.literal("💥 ВЗОРВАТЬ 💥"), b -> { BigTntItem.setPower(menu.getTntStack(), power); if (minecraft != null && minecraft.player != null) minecraft.player.closeContainer(); }).bounds(cx - 80, cy - 10, 160, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("💥 ВЗОРВАТЬ 💥"), b -> { if (minecraft != null && minecraft.player != null) { var stack = minecraft.player.getMainHandItem(); BigTntItem.setPower(stack, power); minecraft.player.closeContainer(); } }).bounds(cx - 80, cy - 10, 160, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Закрыть"), b -> { if (minecraft != null && minecraft.player != null) minecraft.player.closeContainer(); }).bounds(cx - 40, cy + 30, 80, 20).build());
         }
         @Override protected void renderBg(GuiGraphics g, float p, int mx, int my) {
@@ -231,4 +222,4 @@ class ClientStuff {
         }
         @Override public void render(GuiGraphics g, int mx, int my, float pt) { renderBackground(g, mx, my, pt); super.render(g, mx, my, pt); renderTooltip(g, mx, my); }
     }
-    }
+            }
