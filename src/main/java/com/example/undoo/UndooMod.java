@@ -14,6 +14,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -28,6 +29,7 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.Container;
@@ -153,7 +155,7 @@ class MegaEnchanterItem extends Item {
             if (!t.isEmpty()) {
                 var reg = l.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
                 var mut = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
-                reg.stream().forEach(e -> mut.set(e, 255));
+                reg.listElements().forEach(holder -> mut.set(holder, 255));
                 t.set(DataComponents.ENCHANTMENTS, mut.toImmutable());
             }
         }
@@ -200,9 +202,13 @@ class TntScreen extends AbstractContainerScreen<TntMenu> {
 
 @EventBusSubscriber(modid = UndooMod.MODID, value = Dist.CLIENT)
 class KeyHandler {
-    public static final KeyMapping OPEN_MENU = new KeyMapping("key.undoo.open_menu", GLFW.GLFW_KEY_I, "category.undoo");
+    public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("undoo", "main"));
+    public static final KeyMapping OPEN_MENU = new KeyMapping("key.undoo.open_menu", GLFW.GLFW_KEY_I, CATEGORY);
     
-    @SubscribeEvent public static void regKeys(RegisterKeyMappingsEvent e) { e.register(OPEN_MENU); }
+    @SubscribeEvent public static void regKeys(RegisterKeyMappingsEvent e) { 
+        e.registerCategory(CATEGORY);
+        e.register(OPEN_MENU); 
+    }
     
     @SubscribeEvent public static void onKey(ClientTickEvent.Post e) {
         while (OPEN_MENU.consumeClick()) {
@@ -212,4 +218,4 @@ class KeyHandler {
             }
         }
     }
-                                 }
+    }
