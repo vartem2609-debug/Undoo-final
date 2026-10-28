@@ -1,6 +1,12 @@
+#!/bin/bash
+set -e
+
+echo ">>> Создаю исправленный код мода..."
+mkdir -p src/main/java/com/example/undoo
+
+cat > src/main/java/com/example/undoo/UndooMod.java << 'EOF'
 package com.example.undoo;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.serialization.Codec;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -16,9 +22,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -33,7 +40,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.*;
-import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -90,13 +96,12 @@ public class UndooMod {
         out.accept(TNT.get()); out.accept(NETHER_ITEM.get()); out.accept(END_ITEM.get()); out.accept(ENCHANTER.get()); out.accept(MOB.get()); out.accept(WAND.get());
         out.accept(Items.LAVA_BUCKET); out.accept(Items.WATER_BUCKET);
         ItemStack sword = new ItemStack(Items.NETHERITE_SWORD);
-        var reg = params.holders().lookupOrThrow(Registries.ENCHANTMENT);
         ItemEnchantments.Mutable mut = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
-        reg.listElements().forEach(h -> mut.set(h, 255));
+        params.holders().lookupOrThrow(Registries.ENCHANTMENT).listElements().forEach(h -> mut.set(h, 255));
         sword.set(DataComponents.ENCHANTMENTS, mut.toImmutable());
         out.accept(sword);
         out.accept(Items.STONE); out.accept(Items.GRASS_BLOCK); out.accept(Items.DIRT);
-    }).build()));
+    }).build());
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Float>> POWER = COMPONENTS.register("explosion_power", () -> DataComponentType.<Float>builder().persistent(Codec.FLOAT).networkSynchronized(ByteBufCodecs.FLOAT).build());
 
@@ -253,6 +258,6 @@ class SavedMobsScreen extends AbstractContainerScreen<SavedMobsMenu> {
 
 record SavedMob(String name, String entityId, String mainHand, String offHand, String head, String chest, String legs, String feet) {}
 
-record SetTradePacket(String in, String out) implements net.minecraft.network.protocol.common.custom.CustomPacketPayload {
+record SetTradePacket(String in, String out) implements CustomPacketPayload {
     public static final Type<SetTradePacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(UndooMod.MODID, "set_trade"));
-    public static final net.minecraft.network.codec.StreamCodec<FriendlyByteBuf, SetTradePacket> STREAM_CODEC = net.minecraft.network.codec.StreamCodec.composite(ByteBu
+    public static final StreamCodec<FriendlyByteBuf, SetTradePacket> STREAM_CODEC = StreamCodec.composite
