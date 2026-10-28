@@ -254,8 +254,22 @@ record SetTradePacket(String in, String out) implements CustomPacketPayload {
     public static final Type<SetTradePacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(UndooMod.MODID, "set_trade"));
     public static final StreamCodec<FriendlyByteBuf, SetTradePacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, SetTradePacket::in, ByteBufCodecs.STRING_UTF8, SetTradePacket::out, SetTradePacket::new);
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
-    public static void  handle(SetTradePacket p, IPayloadContext ctx) {
-        ctx.enqueueWork(() -> { if (ctx.player() instanceof ServerPlayer sp) { var v = sp.level().getEntitiesOfClass(Villager.class, sp.getBoundingBox().inflate(5)).stream().findFirst().orElse(null); if (v != null) { var o = new MerchantOffers(); o.add(new MerchantOffer(new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(p.in()))), new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(p.out()))), 100, 1, 0.05f)); v.setOffers(o); } } });
+    public static void 
+     handle(SetTradePacket p, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player() instanceof ServerPlayer sp) {
+                var v = sp.level().getEntitiesOfClass(Villager.class, sp.getBoundingBox().inflate(5)).stream().findFirst().orElse(null);
+                if (v != null) {
+                    var inOpt = BuiltInRegistries.ITEM.get(Identifier.parse(p.in()));
+                    var outOpt = BuiltInRegistries.ITEM.get(Identifier.parse(p.out()));
+                    if (inOpt.isPresent() && outOpt.isPresent()) {
+                        var o = new MerchantOffers();
+                        o.add(new MerchantOffer(new ItemStack(inOpt.get().value(), 1), new ItemStack(outOpt.get().value(), 1), 100, 1, 0.05f));
+                        v.setOffers(o);
+                    }
+                }
+            }
+        });
     }
 }
 
@@ -271,7 +285,25 @@ record SpawnMobPacket(int idx) implements CustomPacketPayload {
     public static final StreamCodec<FriendlyByteBuf, SpawnMobPacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.INT, SpawnMobPacket::idx, SpawnMobPacket::new);
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
     public static void handle(SpawnMobPacket p, IPayloadContext ctx) {
-        ctx.enqueueWork(() -> { if (ctx.player() instanceof ServerPlayer sp && p.idx() < UndooMod.SAVED.size()) { SavedMob m = UndooMod.SAVED.get(p.idx()); var e = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(m.entityId())).create(sp.level()); if (e instanceof Mob mob) { mob.setPos(sp.getX(), sp.getY(), sp.getZ()); if(!m.mainHand().isEmpty()) mob.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(m.mainHand())))); if(!m.head().isEmpty()) mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(m.head())))); sp.level().addFreshEntity(mob); } } });
+        ctx.enqueueWork(() -> { 
+            if (ctx.player() instanceof ServerPlayer sp && p.idx() < UndooMod.SAVED.size()) { 
+                SavedMob m = UndooMod.SAVED.get(p.idx()); 
+                var entityTypeOpt = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(m.entityId()));
+                if (entityTypeOpt.isPresent()) {
+                    var e = entityTypeOpt.get().value().create(sp.level()); 
+                    if (e instanceof Mob mob) { 
+                        mob.setPos(sp.getX(), sp.getY(), sp.getZ()); 
+                        if(!m.mainHand().isEmpty()) { var opt = BuiltInRegistries.ITEM.get(Identifier.parse(m.mainHand())); if(opt.isPresent()) mob.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(opt.get().value())); }
+                        if(!m.offHand().isEmpty()) { var opt = BuiltInRegistries.ITEM.get(Identifier.parse(m.offHand())); if(opt.isPresent()) mob.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(opt.get().value())); }
+                        if(!m.head().isEmpty()) { var opt = BuiltInRegistries.ITEM.get(Identifier.parse(m.head())); if(opt.isPresent()) mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(opt.get().value())); }
+                        if(!m.chest().isEmpty()) { var opt = BuiltInRegistries.ITEM.get(Identifier.parse(m.chest())); if(opt.isPresent()) mob.setItemSlot(EquipmentSlot.CHEST, new ItemStack(opt.get().value())); }
+                        if(!m.legs().isEmpty()) { var opt = BuiltInRegistries.ITEM.get(Identifier.parse(m.legs())); if(opt.isPresent()) mob.setItemSlot(EquipmentSlot.LEGS, new ItemStack(opt.get().value())); }
+                        if(!m.feet().isEmpty()) { var opt = BuiltInRegistries.ITEM.get(Identifier.parse(m.feet())); if(opt.isPresent()) mob.setItemSlot(EquipmentSlot.FEET, new ItemStack(opt.get().value())); }
+                        sp.level().addFreshEntity(mob); 
+                    } 
+                }
+            } 
+        });
     }
 }
 
@@ -299,4 +331,4 @@ class KeyHandler {
             }
         }
     }
-        }
+                                                                                                    }
