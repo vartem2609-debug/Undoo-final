@@ -1,0 +1,14 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+[[mods]]
+modId = "undoo"
+version = "1.0.0"
+displayName = "вещи бога UNDOO"
+description = "ТНТ, порталы, мега-зачарователь"
+[[dependencies.undoo]]
+modId = "neoforge"
+type = "required"
+versionRange = "[26.2,)"
+ordering = "NONE"
+side = "BOTH"
