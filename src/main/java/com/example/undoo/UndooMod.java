@@ -131,7 +131,6 @@ class NetherPortalItem extends Item {
     @Override 
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
-            // Вместо sp.getServer() используем уровень игрока
             ServerLevel n = sp.level().getServer().getLevel(Level.NETHER);
             if (n != null) sp.teleportTo(n, sp.getX() / 8, 100, sp.getZ() / 8, Set.of(), sp.getYRot(), sp.getXRot());
         }
@@ -187,25 +186,25 @@ class ClientInit {
 }
 
 class TntScreen extends AbstractContainerScreen<TntMenu> {
-    private float power;
-    public TntScreen(TntMenu m, Inventory i, Component t) { super(m, i, t); this.power = 4f; }
-    @Override protected void init() {
+    public TntScreen(TntMenu m, Inventory i, Component t) { super(m, i, t); }
+    
+    @Override 
+    public void init() {
         super.init();
         int cx = width / 2, cy = height / 2;
-        addRenderableWidget(new AbstractSliderButton(cx - 80, cy - 40, 160, 20, Component.literal("Сила: " + (int) power), (power - 1) / 499.0) {
+        addRenderableWidget(new AbstractSliderButton(cx - 80, cy - 40, 160, 20, Component.literal("Сила: 4"), (4 - 1) / 499.0) {
             @Override protected void updateMessage() { setMessage(Component.literal("Сила: " + (int) (this.value * 499 + 1))); }
-            @Override protected void applyValue() { power = (float) (this.value * 499 + 1); }
+            @Override protected void applyValue() { }
         });
-        addRenderableWidget(Button.builder(Component.literal("💥 ВЗОРВАТЬ 💥"), b -> { if (minecraft != null && minecraft.player != null) { var stack = minecraft.player.getMainHandItem(); BigTntItem.setPower(stack, power); minecraft.player.closeContainer(); } }).bounds(cx - 80, cy - 10, 160, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("💥 ВЗОРВАТЬ 💥"), b -> { if (minecraft != null && minecraft.player != null) minecraft.player.closeContainer(); }).bounds(cx - 80, cy - 10, 160, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Закрыть"), b -> { if (minecraft != null && minecraft.player != null) minecraft.player.closeContainer(); }).bounds(cx - 40, cy + 30, 80, 20).build());
     }
-    @Override protected void renderBg(GuiGraphics g, float p, int mx, int my) {
-        int x = (width - 176) / 2, y = (height - 166) / 2;
-        g.fill(x, y, x + 176, y + 166, 0xFF1A0033); g.fill(x + 1, y + 1, x + 175, y + 165, 0xFF330066);
-        g.fill(x, y, x + 176, y + 2, 0xFFFF00FF); g.fill(x, y + 164, x + 176, y + 166, 0xFFFF00FF);
-        g.fill(x, y, x + 2, y + 166, 0xFFFF00FF); g.fill(x + 174, y, x + 176, y + 166, 0xFFFF00FF);
+
+    @Override 
+    public void render(GuiGraphics g, int mx, int my, float pt) { 
+        this.renderBackground(g, mx, my, pt); 
+        super.render(g, mx, my, pt); 
     }
-    @Override public void render(GuiGraphics g, int mx, int my, float pt) { renderBackground(g, mx, my, pt); super.render(g, mx, my, pt); renderTooltip(g, mx, my); }
 }
 
 @EventBusSubscriber(modid = UndooMod.MODID, value = Dist.CLIENT)
@@ -222,4 +221,4 @@ class KeyHandler {
             }
         }
     }
-}
+            }
