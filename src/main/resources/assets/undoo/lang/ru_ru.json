@@ -1,8 +1,10 @@
 {
   "item.undoo.big_tnt": "Большой ТНТ",
-  "item.undoo.nether_portal": "Портал в Ад",
-  "item.undoo.end_portal": "Портал в Энд",
+  "item.undoo.nether_portal": "Блок Портала в Ад",
+  "item.undoo.end_portal": "Блок Портала в Энд",
   "item.undoo.mega_enchanter": "Мега-Зачарователь",
-  "key.undoo.open_menu": "Открыть меню ТНТ",
-  "category.undoo": "UNDOO"
+  "item.undoo.fastsetting_mob": "Спавнер Бронированных Мобов",
+  "itemGroup.undoo": "Вещи Бога UNDOO",
+  "block.undoo.nether_portal_block": "Блок Портала в Ад",
+  "block.undoo.end_portal_block": "Блок Портала в Энд"
 }
