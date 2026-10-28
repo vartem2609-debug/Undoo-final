@@ -37,7 +37,6 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -87,7 +86,7 @@ public class UndooMod {
     }
 
     private void registerScreens(RegisterMenuScreensEvent event) {
-        if (FMLEnvironment.dist == Dist.CLIENT) event.register(TNT_MENU.get(), ClientInit::getScreen);
+        event.register(TNT_MENU.get(), ClientInit::getScreen);
     }
 }
 
@@ -106,7 +105,6 @@ class BigTntItem extends Item {
     public static float getPower(ItemStack s) { return s.getOrDefault(UndooMod.EXPLOSION_POWER.get(), 4f); }
     public static void setPower(ItemStack s, float p) { s.set(UndooMod.EXPLOSION_POWER.get(), Math.max(1f, Math.min(500f, p))); }
     
-    @Override 
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (player.isShiftKeyDown()) {
@@ -119,7 +117,6 @@ class BigTntItem extends Item {
         return InteractionResult.SUCCESS;
     }
     
-    @Override 
     public void appendHoverText(ItemStack s, TooltipContext c, List<Component> t, TooltipFlag f) {
         t.add(Component.literal("Сила: " + (int) getPower(s)));
         t.add(Component.literal("ПКМ — меню | Shift+ПКМ — взрыв"));
@@ -128,7 +125,6 @@ class BigTntItem extends Item {
 
 class NetherPortalItem extends Item {
     public NetherPortalItem(Properties p) { super(p); }
-    @Override 
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
             ServerLevel n = sp.level().getServer().getLevel(Level.NETHER);
@@ -140,7 +136,6 @@ class NetherPortalItem extends Item {
 
 class EndPortalItem extends Item {
     public EndPortalItem(Properties p) { super(p); }
-    @Override 
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
             ServerLevel e = sp.level().getServer().getLevel(Level.END);
@@ -152,7 +147,6 @@ class EndPortalItem extends Item {
 
 class MegaEnchanterItem extends Item {
     public MegaEnchanterItem(Properties p) { super(p); }
-    @Override 
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (!l.isClientSide()) {
             ItemStack t = p.getOffhandItem();
@@ -171,12 +165,12 @@ class TntMenu extends AbstractContainerMenu {
     public TntMenu(int id, Inventory inv) {
         super(UndooMod.TNT_MENU.get(), id);
         Container container = new SimpleContainer(1);
-        this.addSlot(new Slot(container, 0, 80, 20) { @Override public boolean mayPlace(ItemStack s) { return false; } });
+        this.addSlot(new Slot(container, 0, 80, 20) { public boolean mayPlace(ItemStack s) { return false; } });
         for (int i = 0; i < 3; ++i) { for (int j = 0; j < 9; ++j) { this.addSlot(new Slot(inv, j + i * 9 + 9, 8 + j * 18, 84 + i * 18)); } }
         for (int k = 0; k < 9; ++k) { this.addSlot(new Slot(inv, k, 8 + k * 18, 142)); }
     }
-    @Override public ItemStack quickMoveStack(Player p, int i) { return ItemStack.EMPTY; }
-    @Override public boolean stillValid(Player p) { return true; }
+    public ItemStack quickMoveStack(Player p, int i) { return ItemStack.EMPTY; }
+    public boolean stillValid(Player p) { return true; }
 }
 
 class ClientInit {
@@ -188,19 +182,17 @@ class ClientInit {
 class TntScreen extends AbstractContainerScreen<TntMenu> {
     public TntScreen(TntMenu m, Inventory i, Component t) { super(m, i, t); }
     
-    @Override 
     public void init() {
         super.init();
         int cx = width / 2, cy = height / 2;
         addRenderableWidget(new AbstractSliderButton(cx - 80, cy - 40, 160, 20, Component.literal("Сила: 4"), (4 - 1) / 499.0) {
-            @Override protected void updateMessage() { setMessage(Component.literal("Сила: " + (int) (this.value * 499 + 1))); }
-            @Override protected void applyValue() { }
+            protected void updateMessage() { setMessage(Component.literal("Сила: " + (int) (this.value * 499 + 1))); }
+            protected void applyValue() { }
         });
         addRenderableWidget(Button.builder(Component.literal("💥 ВЗОРВАТЬ 💥"), b -> { if (minecraft != null && minecraft.player != null) minecraft.player.closeContainer(); }).bounds(cx - 80, cy - 10, 160, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Закрыть"), b -> { if (minecraft != null && minecraft.player != null) minecraft.player.closeContainer(); }).bounds(cx - 40, cy + 30, 80, 20).build());
     }
 
-    @Override 
     public void render(GuiGraphics g, int mx, int my, float pt) { 
         this.renderBackground(g, mx, my, pt); 
         super.render(g, mx, my, pt); 
