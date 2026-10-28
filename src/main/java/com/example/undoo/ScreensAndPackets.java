@@ -14,12 +14,14 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
@@ -141,7 +143,7 @@ record SetTradePacket(String in, String out) implements CustomPacketPayload {
                     var outOpt = BuiltInRegistries.ITEM.get(Identifier.parse(p.out()));
                     if (inOpt.isPresent() && outOpt.isPresent()) {
                         var o = new MerchantOffers(); 
-                        o.add(new MerchantOffer(new ItemStack(inOpt.get().value(), 1), new ItemStack(outOpt.get().value(), 1), 100, 1, 0.05f)); 
+                        o.add(new MerchantOffer(new ItemCost(inOpt.get().value(), 1), new ItemStack(outOpt.get().value(), 1), 100, 1, 0.05f)); 
                         v.setOffers(o); 
                     }
                 } 
@@ -167,7 +169,7 @@ record SpawnMobPacket(int idx) implements CustomPacketPayload {
                 SavedMob m = UndooMod.SAVED.get(p.idx()); 
                 var entityTypeOpt = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(m.entityId()));
                 if (entityTypeOpt.isPresent()) {
-                    var e = entityTypeOpt.get().value().create(sp.level()); 
+                    var e = entityTypeOpt.get().value().create(sp.level(), EntitySpawnReason.MOB_SUMMONED); 
                     if (e instanceof Mob mob) { 
                         mob.setPos(sp.getX(), sp.getY(), sp.getZ()); 
                         if(!m.mainHand().isEmpty()) { var opt = BuiltInRegistries.ITEM.get(Identifier.parse(m.mainHand())); if(opt.isPresent()) mob.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(opt.get().value())); }
@@ -189,4 +191,4 @@ record DeleteMobPacket(int idx) implements CustomPacketPayload {
     public static final StreamCodec<FriendlyByteBuf, DeleteMobPacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.INT, DeleteMobPacket::idx, DeleteMobPacket::new);
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
     public static void handle(DeleteMobPacket p, IPayloadContext ctx) { ctx.enqueueWork(() -> { if (p.idx() < UndooMod.SAVED.size()) UndooMod.SAVED.remove(p.idx()); }); }
-}
+                    }
