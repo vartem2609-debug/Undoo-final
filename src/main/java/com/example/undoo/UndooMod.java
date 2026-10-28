@@ -205,7 +205,7 @@ class TradeScreen extends AbstractContainerScreen<TradeMenu> {
         out = new EditBox(minecraft.font, cx - 100, cy - 30, 200, 20, Component.literal("Выход"));
         addRenderableWidget(in); addRenderableWidget(out);
         addRenderableWidget(Button.builder(Component.literal("Применить"), b -> {
-            if (minecraft != null && minecraft.player != null) { PacketDistributor.send(new SetTradePacket(in.getValue(), out.getValue())); minecraft.player.closeContainer(); }
+            if (minecraft != null && minecraft.player != null) { PacketDistributor.sendToServer(new SetTradePacket(in.getValue(), out.getValue())); minecraft.player.closeContainer(); }
         }).bounds(cx - 80, cy + 10, 160, 20).build());
     }
     public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float pt) { super.extractRenderState(g, mx, my, pt); }
@@ -226,7 +226,7 @@ class MobConstructorScreen extends AbstractContainerScreen<MobConstructorMenu> {
         ft = new EditBox(minecraft.font, cx - 100, cy + 175, 200, 20, Component.literal("Ботинки"));
         addRenderableWidget(name); addRenderableWidget(ent); addRenderableWidget(mh); addRenderableWidget(oh); addRenderableWidget(hd); addRenderableWidget(ch); addRenderableWidget(lg); addRenderableWidget(ft);
         addRenderableWidget(Button.builder(Component.literal("+"), b -> {
-            PacketDistributor.send(new SaveMobPacket(name.getValue(), ent.getValue(), mh.getValue(), oh.getValue(), hd.getValue(), ch.getValue(), lg.getValue(), ft.getValue()));
+            PacketDistributor.sendToServer(new SaveMobPacket(name.getValue(), ent.getValue(), mh.getValue(), oh.getValue(), hd.getValue(), ch.getValue(), lg.getValue(), ft.getValue()));
             if (minecraft != null && minecraft.player != null) { minecraft.player.closeContainer(); minecraft.player.openMenu(new SimpleMenuProvider((id, inv, pl) -> new SavedMobsMenu(id, inv), Component.literal("Мобы"))); }
         }).bounds(cx - 20, cy + 205, 40, 20).build());
     }
@@ -240,8 +240,8 @@ class SavedMobsScreen extends AbstractContainerScreen<SavedMobsMenu> {
         for (int i = 0; i < UndooMod.SAVED.size(); i++) {
             int idx = i; SavedMob mob = UndooMod.SAVED.get(i);
             addRenderableWidget(Button.builder(Component.literal(mob.name()), b -> {}).bounds(cx - 100, cy + y, 100, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Спавн"), b -> PacketDistributor.send(new SpawnMobPacket(idx))).bounds(cx, cy + y, 80, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Удалить"), b -> { PacketDistributor.send(new DeleteMobPacket(idx)); if (minecraft != null && minecraft.player != null) { minecraft.player.closeContainer(); minecraft.player.openMenu(new SimpleMenuProvider((id, inv, pl) -> new SavedMobsMenu(id, inv), Component.literal("Мобы"))); } }).bounds(cx + 85, cy + y, 80, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Спавн"), b -> PacketDistributor.sendToServer(new SpawnMobPacket(idx))).bounds(cx, cy + y, 80, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Удалить"), b -> { PacketDistributor.sendToServer(new DeleteMobPacket(idx)); if (minecraft != null && minecraft.player != null) { minecraft.player.closeContainer(); minecraft.player.openMenu(new SimpleMenuProvider((id, inv, pl) -> new SavedMobsMenu(id, inv), Component.literal("Мобы"))); } }).bounds(cx + 85, cy + y, 80, 20).build());
             y += 25;
         }
     }
@@ -330,4 +330,4 @@ class KeyHandler {
             }
         }
     }
-    }
+        } 
