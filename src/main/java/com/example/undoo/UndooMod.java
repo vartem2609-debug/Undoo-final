@@ -15,6 +15,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -57,10 +58,19 @@ public class UndooMod {
     public static final String MODID = "undoo";
 
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registries.ITEM, MODID);
-    public static final DeferredHolder<Item, Item> BIG_TNT = ITEMS.register("big_tnt", () -> new BigTntItem(new Item.Properties()));
-    public static final DeferredHolder<Item, Item> END_PORTAL = ITEMS.register("end_portal", () -> new EndPortalItem(new Item.Properties()));
-    public static final DeferredHolder<Item, Item> NETHER_PORTAL = ITEMS.register("nether_portal", () -> new NetherPortalItem(new Item.Properties()));
-    public static final DeferredHolder<Item, Item> MEGA_ENCHANTER = ITEMS.register("mega_enchanter", () -> new MegaEnchanterItem(new Item.Properties()));
+    
+    // ПРАВИЛЬНАЯ РЕГИСТРАЦИЯ: передаем ID прямо в Properties
+    public static final DeferredHolder<Item, Item> BIG_TNT = ITEMS.register("big_tnt", 
+        () -> new BigTntItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "big_tnt")))));
+    
+    public static final DeferredHolder<Item, Item> END_PORTAL = ITEMS.register("end_portal", 
+        () -> new EndPortalItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "end_portal")))));
+    
+    public static final DeferredHolder<Item, Item> NETHER_PORTAL = ITEMS.register("nether_portal", 
+        () -> new NetherPortalItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "nether_portal")))));
+    
+    public static final DeferredHolder<Item, Item> MEGA_ENCHANTER = ITEMS.register("mega_enchanter", 
+        () -> new MegaEnchanterItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "mega_enchanter")))));
 
     public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, MODID);
     public static final DeferredHolder<MenuType<?>, MenuType<TntMenu>> TNT_MENU = MENUS.register("tnt_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new TntMenu(id, inv)));
@@ -217,4 +227,4 @@ class KeyHandler {
             }
         }
     }
-                }
+    }
