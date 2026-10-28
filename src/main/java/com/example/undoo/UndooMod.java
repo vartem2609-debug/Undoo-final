@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.serialization.Codec;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -193,9 +193,8 @@ class TntScreen extends AbstractContainerScreen<TntMenu> {
         addRenderableWidget(Button.builder(Component.literal("Закрыть"), b -> { if (minecraft != null && minecraft.player != null) minecraft.player.closeContainer(); }).bounds(cx - 40, cy + 30, 80, 20).build());
     }
 
-    public void render(GuiGraphics g, int mx, int my, float pt) { 
-        this.renderBackground(g, mx, my, pt); 
-        super.render(g, mx, my, pt); 
+    public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float pt) { 
+        super.extractRenderState(g, mx, my, pt); 
     }
 }
 
@@ -213,4 +212,4 @@ class KeyHandler {
             }
         }
     }
-            }
+                                 }
