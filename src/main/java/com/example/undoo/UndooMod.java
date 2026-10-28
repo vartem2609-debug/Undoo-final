@@ -16,10 +16,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -120,18 +120,22 @@ class BigTntItem extends Item {
     public BigTntItem(Properties p) { super(p); }
     public static float getPower(ItemStack s) { return s.getOrDefault(UndooMod.EXPLOSION_POWER.get(), 4f); }
     public static void setPower(ItemStack s, float p) { s.set(UndooMod.EXPLOSION_POWER.get(), Math.max(1f, Math.min(500f, p))); }
-    @Override public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    
+    @Override 
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (player.isShiftKeyDown()) {
-            if (!level.isClientSide) level.explode(null, player.getX(), player.getY(), player.getZ(), getPower(stack), Level.ExplosionInteraction.TNT);
-            return InteractionResultHolder.success(stack);
+            if (!level.isClientSide()) level.explode(null, player.getX(), player.getY(), player.getZ(), getPower(stack), Level.ExplosionInteraction.TNT);
+            return InteractionResult.SUCCESS;
         }
-        if (!level.isClientSide && player instanceof ServerPlayer sp) {
+        if (!level.isClientSide() && player instanceof ServerPlayer sp) {
             sp.openMenu(new SimpleMenuProvider((id, inv, p) -> new TntMenu(id, inv, stack), Component.literal("Сила взрыва")), buf -> buf.writeItem(stack));
         }
-        return InteractionResultHolder.success(stack);
+        return InteractionResult.SUCCESS;
     }
-    @Override public void appendHoverText(ItemStack s, TooltipContext c, List<Component> t, TooltipFlag f) {
+    
+    @Override 
+    public void appendHoverText(ItemStack s, TooltipContext c, List<Component> t, TooltipFlag f) {
         t.add(Component.literal("Сила: " + (int) getPower(s)));
         t.add(Component.literal("ПКМ — меню | Shift+ПКМ — взрыв"));
     }
@@ -139,30 +143,33 @@ class BigTntItem extends Item {
 
 class NetherPortalItem extends Item {
     public NetherPortalItem(Properties p) { super(p); }
-    @Override public InteractionResultHolder<ItemStack> use(Level l, Player p, InteractionHand h) {
+    @Override 
+    public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
-            var n = sp.getServer().getLevel(Level.NETHER);
+            var n = sp.server.getLevel(Level.NETHER);
             if (n != null) sp.teleportTo(n, (int) sp.getX() / 8, 100, (int) sp.getZ() / 8, sp.getYRot(), sp.getXRot());
         }
-        return InteractionResultHolder.success(p.getItemInHand(h));
+        return InteractionResult.SUCCESS;
     }
 }
 
 class EndPortalItem extends Item {
     public EndPortalItem(Properties p) { super(p); }
-    @Override public InteractionResultHolder<ItemStack> use(Level l, Player p, InteractionHand h) {
+    @Override 
+    public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
-            var e = sp.getServer().getLevel(Level.END);
+            var e = sp.server.getLevel(Level.END);
             if (e != null) sp.teleportTo(e, 1000, 100, 0, sp.getYRot(), sp.getXRot());
         }
-        return InteractionResultHolder.success(p.getItemInHand(h));
+        return InteractionResult.SUCCESS;
     }
 }
 
 class MegaEnchanterItem extends Item {
     public MegaEnchanterItem(Properties p) { super(p); }
-    @Override public InteractionResultHolder<ItemStack> use(Level l, Player p, InteractionHand h) {
-        if (!l.isClientSide) {
+    @Override 
+    public InteractionResult use(Level l, Player p, InteractionHand h) {
+        if (!l.isClientSide()) {
             ItemStack t = p.getOffhandItem();
             if (!t.isEmpty()) {
                 var reg = l.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
@@ -171,13 +178,13 @@ class MegaEnchanterItem extends Item {
                 t.set(DataComponents.ENCHANTMENTS, mut.toImmutable());
             }
         }
-        return InteractionResultHolder.success(p.getItemInHand(h));
+        return InteractionResult.SUCCESS;
     }
 }
 
 class TntMenu extends AbstractContainerMenu {
     private final ItemStack tntStack;
-    public TntMenu(int id, Inventory inv, FriendlyByteBuf buf) { this(id, inv, buf.readItem()); }
+    public TntMenu(int id, Inventory inv, FriendlyByteBuf buf) { this(id, inv, ItemStack.STREAM_CODEC.decode(buf)); }
     public TntMenu(int id, Inventory inv, ItemStack stack) {
         super(UndooMod.TNT_MENU.get(), id);
         this.tntStack = stack;
@@ -192,7 +199,7 @@ class TntMenu extends AbstractContainerMenu {
 }
 
 record OpenTntMenuPacket() implements CustomPacketPayload {
-    public static final Type<OpenTntMenuPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("undoo", "open_tnt_menu"));
+    public static final Type<OpenTntMenuPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath("undoo", "open_tnt_menu"));
     public static final StreamCodec<FriendlyByteBuf, OpenTntMenuPacket> STREAM_CODEC = StreamCodec.unit(new OpenTntMenuPacket());
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     public static void handle(OpenTntMenuPacket p, IPayloadContext ctx) {
@@ -208,8 +215,13 @@ record OpenTntMenuPacket() implements CustomPacketPayload {
 class ClientStuff {
     @EventBusSubscriber(modid = UndooMod.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ModBusEvents {
-        public static final KeyMapping OPEN_MENU = new KeyMapping("key.undoo.open_menu", GLFW.GLFW_KEY_I, "category.undoo");
-        @SubscribeEvent public static void regKeys(RegisterKeyMappingsEvent e) { e.register(OPEN_MENU); }
+        public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("undoo", "main"));
+        public static final KeyMapping OPEN_MENU = new KeyMapping("key.undoo.open_menu", GLFW.GLFW_KEY_I, CATEGORY);
+        
+        @SubscribeEvent public static void regKeys(RegisterKeyMappingsEvent e) { 
+            e.registerCategory(CATEGORY);
+            e.register(OPEN_MENU); 
+        }
     }
 
     @EventBusSubscriber(modid = UndooMod.MODID, value = Dist.CLIENT)
@@ -243,4 +255,4 @@ class ClientStuff {
         }
         @Override public void render(GuiGraphics g, int mx, int my, float pt) { renderBackground(g, mx, my, pt); super.render(g, mx, my, pt); renderTooltip(g, mx, my); }
     }
-}
+        }
