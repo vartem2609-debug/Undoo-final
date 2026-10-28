@@ -1,10 +1,3 @@
-#!/bin/bash
-set -e
-
-echo ">>> Создаю исправленный код мода..."
-mkdir -p src/main/java/com/example/undoo
-
-cat > src/main/java/com/example/undoo/UndooMod.java << 'EOF'
 package com.example.undoo;
 
 import com.mojang.serialization.Codec;
@@ -30,7 +23,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.Villager;
@@ -260,4 +252,6 @@ record SavedMob(String name, String entityId, String mainHand, String offHand, S
 
 record SetTradePacket(String in, String out) implements CustomPacketPayload {
     public static final Type<SetTradePacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(UndooMod.MODID, "set_trade"));
-    public static final StreamCodec<FriendlyByteBuf, SetTradePacket> STREAM_CODEC = StreamCodec.composite
+    public static final StreamCodec<FriendlyByteBuf, SetTradePacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, SetTradePacket::in, ByteBufCodecs.STRING_UTF8, SetTradePacket::out, SetTradePacket::new);
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    public static void 
