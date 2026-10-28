@@ -75,10 +75,6 @@ public class UndooMod {
         NeoForge.EVENT_BUS.register(CommandBlocker.class);
         modBus.addListener(this::addCreative);
         modBus.addListener(this::registerScreens);
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            NeoForge.EVENT_BUS.register(ClientStuff.GameBusEvents.class);
-            modBus.addListener(ClientStuff.ModBusEvents::regKeys);
-        }
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
@@ -91,7 +87,7 @@ public class UndooMod {
     }
 
     private void registerScreens(RegisterMenuScreensEvent event) {
-        if (FMLEnvironment.dist == Dist.CLIENT) event.register(TNT_MENU.get(), ClientStuff.TntScreen::new);
+        if (FMLEnvironment.dist == Dist.CLIENT) event.register(TNT_MENU.get(), ClientInit::getScreen);
     }
 }
 
@@ -183,43 +179,46 @@ class TntMenu extends AbstractContainerMenu {
     @Override public boolean stillValid(Player p) { return true; }
 }
 
+class ClientInit {
+    public static AbstractContainerScreen<TntMenu> getScreen(TntMenu menu, Inventory inv, Component title) {
+        return new TntScreen(menu, inv, title);
+    }
+}
+
+class TntScreen extends AbstractContainerScreen<TntMenu> {
+    private float power;
+    public TntScreen(TntMenu m, Inventory i, Component t) { super(m, i, t); this.power = 4f; }
+    @Override protected void init() {
+        super.init();
+        int cx = width / 2, cy = height / 2;
+        addRenderableWidget(new AbstractSliderButton(cx - 80, cy - 40, 160, 20, Component.literal("Сила: " + (int) power), (power - 1) / 499.0) {
+            @Override protected void updateMessage() { setMessage(Component.literal("Сила: " + (int) (this.value * 499 + 1))); }
+            @Override protected void applyValue() { power = (float) (this.value * 499 + 1); }
+        });
+        addRenderableWidget(Button.builder(Component.literal("💥 ВЗОРВАТЬ 💥"), b -> { if (minecraft != null && minecraft.player != null) { var stack = minecraft.player.getMainHandItem(); BigTntItem.setPower(stack, power); minecraft.player.closeContainer(); } }).bounds(cx - 80, cy - 10, 160, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Закрыть"), b -> { if (minecraft != null && minecraft.player != null) minecraft.player.closeContainer(); }).bounds(cx - 40, cy + 30, 80, 20).build());
+    }
+    @Override protected void renderBg(GuiGraphics g, float p, int mx, int my) {
+        int x = (width - 176) / 2, y = (height - 166) / 2;
+        g.fill(x, y, x + 176, y + 166, 0xFF1A0033); g.fill(x + 1, y + 1, x + 175, y + 165, 0xFF330066);
+        g.fill(x, y, x + 176, y + 2, 0xFFFF00FF); g.fill(x, y + 164, x + 176, y + 166, 0xFFFF00FF);
+        g.fill(x, y, x + 2, y + 166, 0xFFFF00FF); g.fill(x + 174, y, x + 176, y + 166, 0xFFFF00FF);
+    }
+    @Override public void render(GuiGraphics g, int mx, int my, float pt) { renderBackground(g, mx, my, pt); super.render(g, mx, my, pt); renderTooltip(g, mx, my); }
+}
+
 @EventBusSubscriber(modid = UndooMod.MODID, value = Dist.CLIENT)
-class ClientStuff {
-    public static class ModBusEvents {
-        public static final KeyMapping OPEN_MENU = new KeyMapping("key.undoo.open_menu", GLFW.GLFW_KEY_I, "category.undoo");
-        @SubscribeEvent public static void regKeys(RegisterKeyMappingsEvent e) { e.register(OPEN_MENU); }
-    }
-
-    public static class GameBusEvents {
-        @SubscribeEvent public static void onKey(ClientTickEvent.Post e) {
-            while (ModBusEvents.OPEN_MENU.consumeClick()) {
-                var p = Minecraft.getInstance().player;
-                if (p != null && p.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof BigTntItem) {
-                    p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new TntMenu(id, inv), Component.literal("Сила взрыва")));
-                }
+class KeyHandler {
+    public static final KeyMapping OPEN_MENU = new KeyMapping("key.undoo.open_menu", GLFW.GLFW_KEY_I, "category.undoo");
+    
+    @SubscribeEvent public static void regKeys(RegisterKeyMappingsEvent e) { e.register(OPEN_MENU); }
+    
+    @SubscribeEvent public static void onKey(ClientTickEvent.Post e) {
+        while (OPEN_MENU.consumeClick()) {
+            var p = Minecraft.getInstance().player;
+            if (p != null && p.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof BigTntItem) {
+                p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new TntMenu(id, inv), Component.literal("Сила взрыва")));
             }
         }
     }
-
-    public static class TntScreen extends AbstractContainerScreen<TntMenu> {
-        private float power;
-        public TntScreen(TntMenu m, Inventory i, Component t) { super(m, i, t); this.power = 4f; }
-        @Override protected void init() {
-            super.init();
-            int cx = width / 2, cy = height / 2;
-            addRenderableWidget(new AbstractSliderButton(cx - 80, cy - 40, 160, 20, Component.literal("Сила: " + (int) power), (power - 1) / 499.0) {
-                @Override protected void updateMessage() { setMessage(Component.literal("Сила: " + (int) (this.value * 499 + 1))); }
-                @Override protected void applyValue() { power = (float) (this.value * 499 + 1); }
-            });
-            addRenderableWidget(Button.builder(Component.literal("💥 ВЗОРВАТЬ 💥"), b -> { if (minecraft != null && minecraft.player != null) { var stack = minecraft.player.getMainHandItem(); BigTntItem.setPower(stack, power); minecraft.player.closeContainer(); } }).bounds(cx - 80, cy - 10, 160, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Закрыть"), b -> { if (minecraft != null && minecraft.player != null) minecraft.player.closeContainer(); }).bounds(cx - 40, cy + 30, 80, 20).build());
-        }
-        @Override protected void renderBg(GuiGraphics g, float p, int mx, int my) {
-            int x = (width - 176) / 2, y = (height - 166) / 2;
-            g.fill(x, y, x + 176, y + 166, 0xFF1A0033); g.fill(x + 1, y + 1, x + 175, y + 165, 0xFF330066);
-            g.fill(x, y, x + 176, y + 2, 0xFFFF00FF); g.fill(x, y + 164, x + 176, y + 166, 0xFFFF00FF);
-            g.fill(x, y, x + 2, y + 166, 0xFFFF00FF); g.fill(x + 174, y, x + 176, y + 166, 0xFFFF00FF);
-        }
-        @Override public void render(GuiGraphics g, int mx, int my, float pt) { renderBackground(g, mx, my, pt); super.render(g, mx, my, pt); renderTooltip(g, mx, my); }
     }
-            }
