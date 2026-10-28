@@ -205,7 +205,7 @@ class TradeScreen extends AbstractContainerScreen<TradeMenu> {
         out = new EditBox(minecraft.font, cx - 100, cy - 30, 200, 20, Component.literal("Выход"));
         addRenderableWidget(in); addRenderableWidget(out);
         addRenderableWidget(Button.builder(Component.literal("Применить"), b -> {
-            if (minecraft != null && minecraft.player != null) { PacketDistributor.sendToServer(new SetTradePacket(in.getValue(), out.getValue())); minecraft.player.closeContainer(); }
+            if (minecraft != null && minecraft.player != null) { PacketDistributor.send(new SetTradePacket(in.getValue(), out.getValue())); minecraft.player.closeContainer(); }
         }).bounds(cx - 80, cy + 10, 160, 20).build());
     }
     public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float pt) { super.extractRenderState(g, mx, my, pt); }
@@ -226,7 +226,7 @@ class MobConstructorScreen extends AbstractContainerScreen<MobConstructorMenu> {
         ft = new EditBox(minecraft.font, cx - 100, cy + 175, 200, 20, Component.literal("Ботинки"));
         addRenderableWidget(name); addRenderableWidget(ent); addRenderableWidget(mh); addRenderableWidget(oh); addRenderableWidget(hd); addRenderableWidget(ch); addRenderableWidget(lg); addRenderableWidget(ft);
         addRenderableWidget(Button.builder(Component.literal("+"), b -> {
-            PacketDistributor.sendToServer(new SaveMobPacket(name.getValue(), ent.getValue(), mh.getValue(), oh.getValue(), hd.getValue(), ch.getValue(), lg.getValue(), ft.getValue()));
+            PacketDistributor.send(new SaveMobPacket(name.getValue(), ent.getValue(), mh.getValue(), oh.getValue(), hd.getValue(), ch.getValue(), lg.getValue(), ft.getValue()));
             if (minecraft != null && minecraft.player != null) { minecraft.player.closeContainer(); minecraft.player.openMenu(new SimpleMenuProvider((id, inv, pl) -> new SavedMobsMenu(id, inv), Component.literal("Мобы"))); }
         }).bounds(cx - 20, cy + 205, 40, 20).build());
     }
@@ -240,8 +240,8 @@ class SavedMobsScreen extends AbstractContainerScreen<SavedMobsMenu> {
         for (int i = 0; i < UndooMod.SAVED.size(); i++) {
             int idx = i; SavedMob mob = UndooMod.SAVED.get(i);
             addRenderableWidget(Button.builder(Component.literal(mob.name()), b -> {}).bounds(cx - 100, cy + y, 100, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Спавн"), b -> PacketDistributor.sendToServer(new SpawnMobPacket(idx))).bounds(cx, cy + y, 80, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Удалить"), b -> { PacketDistributor.sendToServer(new DeleteMobPacket(idx)); if (minecraft != null && minecraft.player != null) { minecraft.player.closeContainer(); minecraft.player.openMenu(new SimpleMenuProvider((id, inv, pl) -> new SavedMobsMenu(id, inv), Component.literal("Мобы"))); } }).bounds(cx + 85, cy + y, 80, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Спавн"), b -> PacketDistributor.send(new SpawnMobPacket(idx))).bounds(cx, cy + y, 80, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Удалить"), b -> { PacketDistributor.send(new DeleteMobPacket(idx)); if (minecraft != null && minecraft.player != null) { minecraft.player.closeContainer(); minecraft.player.openMenu(new SimpleMenuProvider((id, inv, pl) -> new SavedMobsMenu(id, inv), Component.literal("Мобы"))); } }).bounds(cx + 85, cy + y, 80, 20).build());
             y += 25;
         }
     }
@@ -254,21 +254,20 @@ record SetTradePacket(String in, String out) implements CustomPacketPayload {
     public static final Type<SetTradePacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(UndooMod.MODID, "set_trade"));
     public static final StreamCodec<FriendlyByteBuf, SetTradePacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, SetTradePacket::in, ByteBufCodecs.STRING_UTF8, SetTradePacket::out, SetTradePacket::new);
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
-    public static void 
-     handle(SetTradePacket p, IPayloadContext ctx) {
-        ctx.enqueueWork(() -> {
-            if (ctx.player() instanceof ServerPlayer sp) {
-                var v = sp.level().getEntitiesOfClass(Villager.class, sp.getBoundingBox().inflate(5)).stream().findFirst().orElse(null);
-                if (v != null) {
+    public static void handle(SetTradePacket p, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> { 
+            if (ctx.player() instanceof ServerPlayer sp) { 
+                var v = sp.level().getEntitiesOfClass(Villager.class, sp.getBoundingBox().inflate(5)).stream().findFirst().orElse(null); 
+                if (v != null) { 
                     var inOpt = BuiltInRegistries.ITEM.get(Identifier.parse(p.in()));
                     var outOpt = BuiltInRegistries.ITEM.get(Identifier.parse(p.out()));
                     if (inOpt.isPresent() && outOpt.isPresent()) {
-                        var o = new MerchantOffers();
-                        o.add(new MerchantOffer(new ItemStack(inOpt.get().value(), 1), new ItemStack(outOpt.get().value(), 1), 100, 1, 0.05f));
-                        v.setOffers(o);
+                        var o = new MerchantOffers(); 
+                        o.add(new MerchantOffer(new ItemStack(inOpt.get().value(), 1), new ItemStack(outOpt.get().value(), 1), 100, 1, 0.05f)); 
+                        v.setOffers(o); 
                     }
-                }
-            }
+                } 
+            } 
         });
     }
 }
@@ -331,4 +330,4 @@ class KeyHandler {
             }
         }
     }
-                                                                                                    }
+    }
