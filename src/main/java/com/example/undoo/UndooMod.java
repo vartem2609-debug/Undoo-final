@@ -7,12 +7,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -22,8 +17,12 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.CommandEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Mod(UndooMod.MODID)
@@ -41,39 +40,38 @@ public class UndooMod {
     public static final DeferredHolder<Item, Item> END_ITEM = ITEMS.register("end_portal", () -> new BlockItem(END_BLOCK.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "end_portal")))));
     public static final DeferredHolder<Item, Item> TNT = ITEMS.register("big_tnt", () -> new BigTntItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "big_tnt")))));
     public static final DeferredHolder<Item, Item> ENCHANTER = ITEMS.register("mega_enchanter", () -> new MegaEnchanterItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "mega_enchanter")))));
+    public static final DeferredHolder<Item, Item> MOB = ITEMS.register("fastsetting_mob", () -> new FastsettingMobItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "fastsetting_mob")))));
+    public static final DeferredHolder<Item, Item> WAND = ITEMS.register("magic_wand", () -> new MagicWandItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "magic_wand")))));
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("undoo_tab", () -> CreativeModeTab.builder().title(Component.translatable("itemGroup.undoo")).icon(() -> new ItemStack(TNT.get())).displayItems((params, out) -> {
-        out.accept(TNT.get()); out.accept(NETHER_ITEM.get()); out.accept(END_ITEM.get()); out.accept(ENCHANTER.get());
+        out.accept(TNT.get()); out.accept(NETHER_ITEM.get()); out.accept(END_ITEM.get()); out.accept(ENCHANTER.get()); out.accept(MOB.get()); out.accept(WAND.get());
+        out.accept(Items.LAVA_BUCKET); out.accept(Items.WATER_BUCKET);
         ItemStack sword = new ItemStack(Items.NETHERITE_SWORD);
-        ItemEnchantments.Mutable mut = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
-        params.holders().lookupOrThrow(Registries.ENCHANTMENT).listElements().forEach(h -> mut.set(h, 255));
+        var reg = params.holders().lookupOrThrow(Registries.ENCHANTMENT);
+        var mut = new net.minecraft.world.item.enchantment.ItemEnchantments.Mutable(net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY);
+        reg.listElements().forEach(h -> mut.set(h, 255));
         sword.set(DataComponents.ENCHANTMENTS, mut.toImmutable());
         out.accept(sword);
+        out.accept(Items.STONE); out.accept(Items.GRASS_BLOCK); out.accept(Items.DIRT);
     }).build());
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Float>> POWER = COMPONENTS.register("explosion_power", () -> DataComponentType.<Float>builder().persistent(Codec.FLOAT).networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.FLOAT).build());
+    public static final List<SavedMob> SAVED = new ArrayList<>();
 
     public UndooMod(IEventBus bus) {
         ITEMS.register(bus); BLOCKS.register(bus); TABS.register(bus); COMPONENTS.register(bus);
-        NeoForge.EVENT_BUS.register(Blocker.class);
+        Menus.register(bus); Packets.register(bus);
+        bus.addListener(UndooMod::registerPackets);
+        NeoForge.EVENT_BUS.register(CommandBlocker.class);
     }
 
-    public static class Blocker {
-        @SubscribeEvent public static void onCmd(CommandEvent e) {
-            if (e.getParseResults().getReader().getString().startsWith("give") && e.getParseResults().getReader().getString().contains("undoo:")) e.setCanceled(true);
-        }
-    }
-}
-
-class BigTntItem extends Item {
-    public BigTntItem(Properties p) { super(p); }
-    public InteractionResult use(Level l, Player p, InteractionHand h) {
-        if (p.isShiftKeyDown()) { if (!l.isClientSide()) l.explode(null, p.getX(), p.getY(), p.getZ(), 10f, Level.ExplosionInteraction.TNT); return InteractionResult.SUCCESS; }
-        return InteractionResult.SUCCESS;
+    public static void registerPackets(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar reg = event.registrar(MODID);
+        reg.playToServer(SetTradePacket.TYPE, SetTradePacket.STREAM_CODEC, SetTradePacket::handle);
+        reg.playToServer(SaveMobPacket.TYPE, SaveMobPacket.STREAM_CODEC, SaveMobPacket::handle);
+        reg.playToServer(SpawnMobPacket.TYPE, SpawnMobPacket.STREAM_CODEC, SpawnMobPacket::handle);
+        reg.playToServer(DeleteMobPacket.TYPE, DeleteMobPacket.STREAM_CODEC, DeleteMobPacket::handle);
     }
 }
 
-class MegaEnchanterItem extends Item {
-    public MegaEnchanterItem(Properties p) { super(p); }
-    public void appendHoverText(ItemStack s, TooltipContext c, List<Component> t, TooltipFlag f) { t.add(Component.literal("ПКМ по предмету в левой руке, чтобы зачаровать")); }
-}
+class CommandBlocker { @SubscribeEvent public static void onCmd(CommandEvent e) { if (e.getParseResults().getReader().getString().startsWith("give") && e.getParseResults().getReader().getString().contains("undoo:")) e.setCanceled(true); } }
