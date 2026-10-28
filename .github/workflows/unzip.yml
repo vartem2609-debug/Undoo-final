@@ -1,0 +1,16 @@
+name: Unzip Source
+on: [push, workflow_dispatch]
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip
+        run: |
+          unzip src.zip
+          rm src.zip
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add .
+          git commit -m "Unzipped source files"
+          git push
