@@ -20,6 +20,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -29,7 +30,6 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.Container;
@@ -130,7 +130,7 @@ class NetherPortalItem extends Item {
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
             ServerLevel n = sp.level().getServer().getLevel(Level.NETHER);
-            if (n != null) sp.teleportTo(n, sp.getX() / 8, 100, sp.getZ() / 8, Set.of(), sp.getYRot(), sp.getXRot());
+            if (n != null) sp.teleportTo(n, sp.getX() / 8, 100, sp.getZ() / 8, Set.<RelativeMovement>of(), sp.getYRot(), sp.getXRot(), true); // Добавлен true
         }
         return InteractionResult.SUCCESS;
     }
@@ -141,7 +141,7 @@ class EndPortalItem extends Item {
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
             ServerLevel e = sp.level().getServer().getLevel(Level.END);
-            if (e != null) sp.teleportTo(e, 1000, 100, 0, Set.of(), sp.getYRot(), sp.getXRot());
+            if (e != null) sp.teleportTo(e, 1000, 100, 0, Set.<RelativeMovement>of(), sp.getYRot(), sp.getXRot(), true); // Добавлен true
         }
         return InteractionResult.SUCCESS;
     }
