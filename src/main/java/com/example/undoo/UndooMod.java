@@ -25,7 +25,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Zombie;
@@ -78,11 +77,9 @@ public class UndooMod {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Registries.BLOCK, MODID);
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    // Блоки
     public static final DeferredHolder<Block, Block> NETHER_PORTAL_BLOCK = BLOCKS.register("nether_portal_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(1.0f).sound(SoundType.GLASS).setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MODID, "nether_portal_block")))));
     public static final DeferredHolder<Block, Block> END_PORTAL_BLOCK = BLOCKS.register("end_portal_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(1.0f).sound(SoundType.GLASS).setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MODID, "end_portal_block")))));
 
-    // Предметы
     public static final DeferredHolder<Item, Item> NETHER_PORTAL_ITEM = ITEMS.register("nether_portal", () -> new BlockItem(NETHER_PORTAL_BLOCK.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "nether_portal")))));
     public static final DeferredHolder<Item, Item> END_PORTAL_ITEM = ITEMS.register("end_portal", () -> new BlockItem(END_PORTAL_BLOCK.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "end_portal")))));
     public static final DeferredHolder<Item, Item> BIG_TNT = ITEMS.register("big_tnt", () -> new BigTntItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "big_tnt")))));
@@ -90,7 +87,6 @@ public class UndooMod {
     public static final DeferredHolder<Item, Item> FASTSETTING_MOB = ITEMS.register("fastsetting_mob", () -> new FastsettingMobItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "fastsetting_mob")))));
     public static final DeferredHolder<Item, Item> MAGIC_WAND = ITEMS.register("magic_wand", () -> new MagicWandItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "magic_wand")))));
 
-    // Вкладка
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> UNDOO_TAB = CREATIVE_MODE_TABS.register("undoo_tab", () -> CreativeModeTab.builder().title(Component.translatable("itemGroup.undoo")).icon(() -> new ItemStack(BIG_TNT.get())).displayItems((parameters, output) -> {
         output.accept(BIG_TNT.get()); output.accept(NETHER_PORTAL_ITEM.get()); output.accept(END_PORTAL_ITEM.get()); output.accept(MEGA_ENCHANTER.get()); output.accept(FASTSETTING_MOB.get()); output.accept(MAGIC_WAND.get());
         output.accept(Items.LAVA_BUCKET); output.accept(Items.WATER_BUCKET);
@@ -105,11 +101,11 @@ public class UndooMod {
     }
 
     public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, MODID);
-    public static final DeferredHolder<MenuType<?>, MenuType<TntMenu>> TNT_MENU = MENUS.register("tnt_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new TntMenu(id, inv)));
-    public static final DeferredHolder<MenuType<?>, MenuType<EnchanterMenu>> ENCHANTER_MENU = MENUS.register("enchanter_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new EnchanterMenu(id, inv)));
-    public static final DeferredHolder<MenuType<?>, MenuType<TradeMenu>> TRADE_MENU = MENUS.register("trade_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new TradeMenu(id, inv)));
-    public static final DeferredHolder<MenuType<?>, MenuType<MobConstructorMenu>> MOB_CONSTRUCTOR_MENU = MENUS.register("mob_constructor_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new MobConstructorMenu(id, inv)));
-    public static final DeferredHolder<MenuType<?>, MenuType<SavedMobsMenu>> SAVED_MOBS_MENU = MENUS.register("saved_mobs_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new SavedMobsMenu(id, inv)));
+    public static final DeferredHolder<MenuType<?>, MenuType<TntMenu>> TNT_MENU = MENUS.register("tnt_menu", () -> net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create((id, inv, buf) -> new TntMenu(id, inv)));
+    public static final DeferredHolder<MenuType<?>, MenuType<EnchanterMenu>> ENCHANTER_MENU = MENUS.register("enchanter_menu", () -> net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create((id, inv, buf) -> new EnchanterMenu(id, inv)));
+    public static final DeferredHolder<MenuType<?>, MenuType<TradeMenu>> TRADE_MENU = MENUS.register("trade_menu", () -> net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create((id, inv, buf) -> new TradeMenu(id, inv)));
+    public static final DeferredHolder<MenuType<?>, MenuType<MobConstructorMenu>> MOB_CONSTRUCTOR_MENU = MENUS.register("mob_constructor_menu", () -> net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create((id, inv, buf) -> new MobConstructorMenu(id, inv)));
+    public static final DeferredHolder<MenuType<?>, MenuType<SavedMobsMenu>> SAVED_MOBS_MENU = MENUS.register("saved_mobs_menu", () -> net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create((id, inv, buf) -> new SavedMobsMenu(id, inv)));
 
     public static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, MODID);
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Float>> EXPLOSION_POWER = COMPONENTS.register("explosion_power", () -> DataComponentType.<Float>builder().persistent(Codec.FLOAT).networkSynchronized(ByteBufCodecs.FLOAT).build());
@@ -178,11 +174,7 @@ record SpawnSavedMobPacket(int index) implements net.minecraft.network.protocol.
     public static final net.minecraft.network.codec.StreamCodec<FriendlyByteBuf, SpawnSavedMobPacket> STREAM_CODEC = net.minecraft.network.codec.StreamCodec.composite(ByteBufCodecs.INT, SpawnSavedMobPacket::index, SpawnSavedMobPacket::new);
     @Override public Type<? extends net.minecraft.network.protocol.common.custom.CustomPacketPayload> type() { return TYPE; }
     public static void handle(SpawnSavedMobPacket packet, IPayloadContext ctx) {
-        ctx.enqueueWork(() -> {
-            if (ctx.player() instanceof ServerPlayer sp && packet.index() < UndooMod.SAVED_MOBS.size()) {
-                MobSpawnerHelper.spawnCustomMob(sp.level(), sp.getX(), sp.getY(), sp.getZ(), UndooMod.SAVED_MOBS.get(packet.index()));
-            }
-        });
+        ctx.enqueueWork(() -> { if (ctx.player() instanceof ServerPlayer sp && packet.index() < UndooMod.SAVED_MOBS.size()) MobSpawnerHelper.spawnCustomMob(sp.level(), sp.getX(), sp.getY(), sp.getZ(), UndooMod.SAVED_MOBS.get(packet.index())); });
     }
 }
 
@@ -206,18 +198,14 @@ class MobSpawnerHelper {
         var entity = type.create(level);
         if (entity instanceof Mob mob) {
             mob.setPos(x, y, z);
-            if (!saved.mainHand().isEmpty()) mob.setItemSlot(EquipmentSlot.MAINHAND, createItem(saved.mainHand()));
-            if (!saved.offHand().isEmpty()) mob.setItemSlot(EquipmentSlot.OFFHAND, createItem(saved.offHand()));
-            if (!saved.head().isEmpty()) mob.setItemSlot(EquipmentSlot.HEAD, createItem(saved.head()));
-            if (!saved.chest().isEmpty()) mob.setItemSlot(EquipmentSlot.CHEST, createItem(saved.chest()));
-            if (!saved.legs().isEmpty()) mob.setItemSlot(EquipmentSlot.LEGS, createItem(saved.legs()));
-            if (!saved.feet().isEmpty()) mob.setItemSlot(EquipmentSlot.FEET, createItem(saved.feet()));
+            if (!saved.mainHand().isEmpty()) mob.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(saved.mainHand()))));
+            if (!saved.offHand().isEmpty()) mob.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(saved.offHand()))));
+            if (!saved.head().isEmpty()) mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(saved.head()))));
+            if (!saved.chest().isEmpty()) mob.setItemSlot(EquipmentSlot.CHEST, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(saved.chest()))));
+            if (!saved.legs().isEmpty()) mob.setItemSlot(EquipmentSlot.LEGS, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(saved.legs()))));
+            if (!saved.feet().isEmpty()) mob.setItemSlot(EquipmentSlot.FEET, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(saved.feet()))));
             level.addFreshEntity(mob);
         }
-    }
-    private static ItemStack createItem(String id) {
-        Item item = BuiltInRegistries.ITEM.get(Identifier.parse(id));
-        return new ItemStack(item);
     }
 }
 
@@ -280,9 +268,4 @@ class TntMenu extends AbstractContainerMenu {
 
 class EnchanterMenu extends AbstractContainerMenu {
     public EnchanterMenu(int id, Inventory inv) { super(UndooMod.ENCHANTER_MENU.get(), id); }
-    public ItemStack quickMoveStack(Player p, int i) { return ItemStack.EMPTY; }
-    public boolean stillValid(Player p) { return true; }
-}
-
-class TradeMenu extends AbstractContainerMenu {
-    public TradeMenu(int id, Inventory inv) 
+    public ItemStack quickMoveStack(Player 
