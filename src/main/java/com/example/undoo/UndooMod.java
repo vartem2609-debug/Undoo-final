@@ -14,13 +14,13 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -47,15 +47,12 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.CommandEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
+import java.util.Set;
 
 @Mod(UndooMod.MODID)
 public class UndooMod {
@@ -80,7 +77,6 @@ public class UndooMod {
         NeoForge.EVENT_BUS.register(CommandBlocker.class);
         modBus.addListener(this::addCreative);
         modBus.addListener(this::registerScreens);
-        modBus.addListener(this::registerPackets);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             NeoForge.EVENT_BUS.register(ClientStuff.GameBusEvents.class);
             modBus.addListener(ClientStuff.ModBusEvents::regKeys);
@@ -98,11 +94,6 @@ public class UndooMod {
 
     private void registerScreens(RegisterMenuScreensEvent event) {
         if (FMLEnvironment.dist == Dist.CLIENT) event.register(TNT_MENU.get(), ClientStuff.TntScreen::new);
-    }
-
-    private void registerPackets(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar(MODID);
-        registrar.playToServer(OpenTntMenuPacket.TYPE, OpenTntMenuPacket.STREAM_CODEC, OpenTntMenuPacket::handle);
     }
 }
 
@@ -146,8 +137,10 @@ class NetherPortalItem extends Item {
     @Override 
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
-            var n = sp.server.getLevel(Level.NETHER);
-            if (n != null) sp.teleportTo(n, (int) sp.getX() / 8, 100, (int) sp.getZ() / 8, sp.getYRot(), sp.getXRot());
+            ServerLevel n = sp.getServer().getLevel(Level.NETHER);
+            if (n != null) {
+                sp.teleportTo(n, sp.getX() / 8, 100, sp.getZ() / 8, Set.of(), sp.getYRot(), sp.getXRot());
+            }
         }
         return InteractionResult.SUCCESS;
     }
@@ -158,8 +151,10 @@ class EndPortalItem extends Item {
     @Override 
     public InteractionResult use(Level l, Player p, InteractionHand h) {
         if (p instanceof ServerPlayer sp) {
-            var e = sp.server.getLevel(Level.END);
-            if (e != null) sp.teleportTo(e, 1000, 100, 0, sp.getYRot(), sp.getXRot());
+            ServerLevel e = sp.getServer().getLevel(Level.END);
+            if (e != null) {
+                sp.teleportTo(e, 1000, 100, 0, Set.of(), sp.getYRot(), sp.getXRot());
+            }
         }
         return InteractionResult.SUCCESS;
     }
@@ -184,7 +179,7 @@ class MegaEnchanterItem extends Item {
 
 class TntMenu extends AbstractContainerMenu {
     private final ItemStack tntStack;
-    public TntMenu(int id, Inventory inv, FriendlyByteBuf buf) { this(id, inv, ItemStack.STREAM_CODEC.decode(buf)); }
+    public TntMenu(int id, Inventory inv, FriendlyByteBuf buf) { this(id, inv, buf.readItem()); }
     public TntMenu(int id, Inventory inv, ItemStack stack) {
         super(UndooMod.TNT_MENU.get(), id);
         this.tntStack = stack;
@@ -198,28 +193,12 @@ class TntMenu extends AbstractContainerMenu {
     @Override public boolean stillValid(Player p) { return true; }
 }
 
-record OpenTntMenuPacket() implements CustomPacketPayload {
-    public static final Type<OpenTntMenuPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath("undoo", "open_tnt_menu"));
-    public static final StreamCodec<FriendlyByteBuf, OpenTntMenuPacket> STREAM_CODEC = StreamCodec.unit(new OpenTntMenuPacket());
-    @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
-    public static void handle(OpenTntMenuPacket p, IPayloadContext ctx) {
-        ctx.enqueueWork(() -> {
-            if (ctx.player() instanceof ServerPlayer sp) {
-                var stack = sp.getMainHandItem();
-                sp.openMenu(new SimpleMenuProvider((id, inv, pl) -> new TntMenu(id, inv, stack), Component.literal("Сила взрыва")), buf -> buf.writeItem(stack));
-            }
-        });
-    }
-}
-
 class ClientStuff {
     @EventBusSubscriber(modid = UndooMod.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ModBusEvents {
-        public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("undoo", "main"));
-        public static final KeyMapping OPEN_MENU = new KeyMapping("key.undoo.open_menu", GLFW.GLFW_KEY_I, CATEGORY);
+        public static final KeyMapping OPEN_MENU = new KeyMapping("key.undoo.open_menu", GLFW.GLFW_KEY_I, "category.undoo");
         
         @SubscribeEvent public static void regKeys(RegisterKeyMappingsEvent e) { 
-            e.registerCategory(CATEGORY);
             e.register(OPEN_MENU); 
         }
     }
@@ -229,7 +208,10 @@ class ClientStuff {
         @SubscribeEvent public static void onKey(ClientTickEvent.Post e) {
             while (ModBusEvents.OPEN_MENU.consumeClick()) {
                 var p = Minecraft.getInstance().player;
-                if (p != null && p.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof BigTntItem) PacketDistributor.sendToServer(new OpenTntMenuPacket());
+                if (p != null && p.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof BigTntItem) {
+                    // Вместо пакета просто открываем меню на клиенте (работает в одиночной игре)
+                    Minecraft.getInstance().player.openMenu(new SimpleMenuProvider((id, inv, pl) -> new TntMenu(id, inv, p.getItemInHand(InteractionHand.MAIN_HAND)), Component.literal("Сила взрыва")));
+                }
             }
         }
     }
@@ -255,4 +237,4 @@ class ClientStuff {
         }
         @Override public void render(GuiGraphics g, int mx, int my, float pt) { renderBackground(g, mx, my, pt); super.render(g, mx, my, pt); renderTooltip(g, mx, my); }
     }
-        }
+                }
