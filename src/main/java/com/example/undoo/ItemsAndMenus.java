@@ -34,10 +34,20 @@ class MegaEnchanterItem extends Item {
     public InteractionResult use(Level l, Player p, InteractionHand h) { if (!l.isClientSide() && p instanceof ServerPlayer sp) sp.openMenu(new SimpleMenuProvider((id, inv, pl) -> new EnchanterMenu(id, inv), Component.literal("Зачарователь"))); return InteractionResult.SUCCESS; }
 }
 
+class FastsettingMobItem extends Item {
+    public FastsettingMobItem(Properties p) { super(p); }
+    public InteractionResult use(Level l, Player p, InteractionHand h) { if (!l.isClientSide() && p instanceof ServerPlayer sp) sp.openMenu(new SimpleMenuProvider((id, inv, pl) -> new MobConstructorMenu(id, inv), Component.literal("Конструктор"))); return InteractionResult.SUCCESS; }
+}
+
+class MagicWandItem extends Item { public MagicWandItem(Properties p) { super(p); } public InteractionResult useOn(net.minecraft.world.item.context.UseOnContext c) { return InteractionResult.SUCCESS; } }
+
 class Menus {
     public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, UndooMod.MODID);
     public static final DeferredHolder<MenuType<?>, MenuType<TntMenu>> TNT_MENU = MENUS.register("tnt_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new TntMenu(id, inv)));
     public static final DeferredHolder<MenuType<?>, MenuType<EnchanterMenu>> ENCH_MENU = MENUS.register("enchanter_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new EnchanterMenu(id, inv)));
+    public static final DeferredHolder<MenuType<?>, MenuType<TradeMenu>> TRADE_MENU = MENUS.register("trade_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new TradeMenu(id, inv)));
+    public static final DeferredHolder<MenuType<?>, MenuType<MobConstructorMenu>> MOB_MENU = MENUS.register("mob_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new MobConstructorMenu(id, inv)));
+    public static final DeferredHolder<MenuType<?>, MenuType<SavedMobsMenu>> SAVED_MENU = MENUS.register("saved_menu", () -> IMenuTypeExtension.create((id, inv, buf) -> new SavedMobsMenu(id, inv)));
     public static void register(net.neoforged.bus.api.IEventBus bus) { MENUS.register(bus); }
 }
 
@@ -46,3 +56,6 @@ class TntMenu extends AbstractContainerMenu {
     public ItemStack quickMoveStack(Player p, int i) { return ItemStack.EMPTY; } public boolean stillValid(Player p) { return true; }
 }
 class EnchanterMenu extends AbstractContainerMenu { public EnchanterMenu(int id, Inventory inv) { super(Menus.ENCH_MENU.get(), id); } public ItemStack quickMoveStack(Player p, int i) { return ItemStack.EMPTY; } public boolean stillValid(Player p) { return true; } }
+class TradeMenu extends AbstractContainerMenu { public TradeMenu(int id, Inventory inv) { super(Menus.TRADE_MENU.get(), id); } public ItemStack quickMoveStack(Player p, int i) { return ItemStack.EMPTY; } public boolean stillValid(Player p) { return true; } }
+class MobConstructorMenu extends AbstractContainerMenu { public MobConstructorMenu(int id, Inventory inv) { super(Menus.MOB_MENU.get(), id); } public ItemStack quickMoveStack(Player p, int i) { return ItemStack.EMPTY; } public boolean stillValid(Player p) { return true; } }
+class SavedMobsMenu extends AbstractContainerMenu { public SavedMobsMenu(int id, Inventory inv) { super(Menus.SAVED_MENU.get(), id); } public ItemStack quickMoveStack(Player p, int i) { return ItemStack.EMPTY; } public boolean stillValid(Player p) { return true; } }
