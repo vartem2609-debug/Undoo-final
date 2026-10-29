@@ -1,17 +1,24 @@
 package com.example.undoo;
 
 import com.mojang.serialization.Codec;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -19,6 +26,8 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.CommandEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+
+import java.util.Collections;
 
 @Mod(UndooMod.MODID)
 public class UndooMod {
@@ -28,8 +37,8 @@ public class UndooMod {
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     public static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, MODID);
 
-    public static final DeferredHolder<Block, Block> NETHER_BLOCK = BLOCKS.register("nether_portal_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(1.0f).sound(SoundType.GLASS).setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MODID, "nether_portal_block")))));
-    public static final DeferredHolder<Block, Block> END_BLOCK = BLOCKS.register("end_portal_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(1.0f).sound(SoundType.GLASS).setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MODID, "end_portal_block")))));
+    public static final DeferredHolder<Block, Block> NETHER_BLOCK = BLOCKS.register("nether_portal_block", () -> new PortalBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(1.0f).sound(SoundType.GLASS).setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MODID, "nether_portal_block"))), true));
+    public static final DeferredHolder<Block, Block> END_BLOCK = BLOCKS.register("end_portal_block", () -> new PortalBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(1.0f).sound(SoundType.GLASS).setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MODID, "end_portal_block"))), false));
 
     public static final DeferredHolder<Item, Item> NETHER_ITEM = ITEMS.register("nether_portal", () -> new BlockItem(NETHER_BLOCK.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "nether_portal")))));
     public static final DeferredHolder<Item, Item> END_ITEM = ITEMS.register("end_portal", () -> new BlockItem(END_BLOCK.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "end_portal")))));
@@ -53,6 +62,32 @@ public class UndooMod {
         ITEMS.register(bus); BLOCKS.register(bus); TABS.register(bus); COMPONENTS.register(bus);
         Menus.register(bus);
         NeoForge.EVENT_BUS.register(CommandBlocker.class);
+    }
+}
+
+class PortalBlock extends Block {
+    private final boolean isNether;
+    public PortalBlock(Properties p, boolean isNether) {
+        super(p);
+        this.isNether = isNether;
+    }
+
+    @Override
+    public InteractionResult useWithoutItem(net.minecraft.world.level.block.state.BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player instanceof ServerPlayer sp) {
+            if (isNether) {
+                ServerLevel nether = sp.getServer().getLevel(Level.NETHER);
+                if (nether != null) {
+                    sp.teleportTo(nether, sp.getX() / 8, 100, sp.getZ() / 8, Collections.emptySet(), sp.getYRot(), sp.getXRot(), true);
+                }
+            } else {
+                ServerLevel end = sp.getServer().getLevel(Level.END);
+                if (end != null) {
+                    sp.teleportTo(end, 1000, 100, 0, Collections.emptySet(), sp.getYRot(), sp.getXRot(), true);
+                }
+            }
+        }
+        return InteractionResult.SUCCESS;
     }
 }
 
