@@ -9,6 +9,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import org.lwjgl.glfw.GLFW;
@@ -24,8 +25,21 @@ public class ClientEvents {
         while (KEY.consumeClick()) { var p = Minecraft.getInstance().player; if (p != null && p.getMainHandItem().getItem() instanceof BigTntItem) p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new TntMenu(id, inv), Component.literal("ТНТ"))); }
     }
 
+    @SubscribeEvent public static void click(InputEvent.MouseButton.Pre e) {
+        if (e.getAction() == GLFW.GLFW_PRESS && e.getButton() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            var p = Minecraft.getInstance().player;
+            if (p != null && p.isShiftKeyDown() && Minecraft.getInstance().options.keyJump.isDown() && p.getMainHandItem().getItem() instanceof MagicWandItem) {
+                p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new TradeMenu(id, inv), Component.literal("Палочка")));
+                e.setCanceled(true);
+            }
+        }
+    }
+
     @SubscribeEvent public static void regScreens(RegisterMenuScreensEvent e) {
         e.register(Menus.TNT_MENU.get(), TntScreen::new);
         e.register(Menus.ENCH_MENU.get(), EnchanterScreen::new);
+        e.register(Menus.TRADE_MENU.get(), TradeScreen::new);
+        e.register(Menus.MOB_MENU.get(), MobConstructorScreen::new);
+        e.register(Menus.SAVED_MENU.get(), SavedMobsScreen::new);
     }
 }
