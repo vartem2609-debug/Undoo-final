@@ -76,12 +76,12 @@ class PortalBlock extends Block {
     public InteractionResult useWithoutItem(net.minecraft.world.level.block.state.BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide() && player instanceof ServerPlayer sp) {
             if (isNether) {
-                ServerLevel nether = sp.getServer().getLevel(Level.NETHER);
+                ServerLevel nether = sp.level().getServer().getLevel(Level.NETHER);
                 if (nether != null) {
                     sp.teleportTo(nether, sp.getX() / 8, 100, sp.getZ() / 8, Collections.emptySet(), sp.getYRot(), sp.getXRot(), true);
                 }
             } else {
-                ServerLevel end = sp.getServer().getLevel(Level.END);
+                ServerLevel end = sp.level().getServer().getLevel(Level.END);
                 if (end != null) {
                     sp.teleportTo(end, 1000, 100, 0, Collections.emptySet(), sp.getYRot(), sp.getXRot(), true);
                 }
