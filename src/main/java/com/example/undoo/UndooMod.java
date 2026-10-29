@@ -1,3 +1,11 @@
+#!/bin/bash
+set -e
+
+echo ">>> Создаю правильный UndooMod.java..."
+
+mkdir -p src/main/java/com/example/undoo
+
+cat > src/main/java/com/example/undoo/UndooMod.java << 'EOF'
 package com.example.undoo;
 
 import com.mojang.serialization.Codec;
@@ -40,13 +48,15 @@ public class UndooMod {
     public static final DeferredHolder<Block, Block> NETHER_BLOCK = BLOCKS.register("nether_portal_block", () -> new PortalBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(1.0f).sound(SoundType.GLASS).setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MODID, "nether_portal_block"))), true));
     public static final DeferredHolder<Block, Block> END_BLOCK = BLOCKS.register("end_portal_block", () -> new PortalBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(1.0f).sound(SoundType.GLASS).setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(MODID, "end_portal_block"))), false));
 
-    public static final DeferredHolder<Item, Item> NETHER_ITEM = ITEMS.register("nether_portal", () -> new BlockItem(NETHER_BLOCK.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "nether_portal")))));
-    public static final DeferredHolder<Item, Item> END_ITEM = ITEMS.register("end_portal", () -> new BlockItem(END_BLOCK.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "end_portal")))));
-    public static final DeferredHolder<Item, Item> TNT = ITEMS.register("big_tnt", () -> new BigTntItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "big_tnt")))));
-    public static final DeferredHolder<Item, Item> ENCHANTER = ITEMS.register("mega_enchanter", () -> new MegaEnchanterItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "mega_enchanter")))));
+    public static final DeferredHolder<Item, Item> NETHER_ITEM = ITEMS.register("nether_portal", () -> new BlockItem(NETHER_BLOCK.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "nether_portal"))).component(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath(MODID, "nether_portal"))));
+    public static final DeferredHolder<Item, Item> END_ITEM = ITEMS.register("end_portal", () -> new BlockItem(END_BLOCK.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "end_portal"))).component(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath(MODID, "end_portal"))));
+    public static final DeferredHolder<Item, Item> TNT = ITEMS.register("big_tnt", () -> new BigTntItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "big_tnt"))).component(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath(MODID, "big_tnt"))));
+    public static final DeferredHolder<Item, Item> ENCHANTER = ITEMS.register("mega_enchanter", () -> new MegaEnchanterItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "mega_enchanter"))).component(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath(MODID, "mega_enchanter"))));
+    public static final DeferredHolder<Item, Item> MOB = ITEMS.register("fastsetting_mob", () -> new FastsettingMobItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "fastsetting_mob"))).component(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath(MODID, "fastsetting_mob"))));
+    public static final DeferredHolder<Item, Item> WAND = ITEMS.register("magic_wand", () -> new MagicWandItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(MODID, "magic_wand"))).component(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath(MODID, "magic_wand"))));
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("undoo_tab", () -> CreativeModeTab.builder().title(Component.translatable("itemGroup.undoo")).icon(() -> new ItemStack(TNT.get())).displayItems((params, out) -> {
-        out.accept(TNT.get()); out.accept(NETHER_ITEM.get()); out.accept(END_ITEM.get()); out.accept(ENCHANTER.get());
+        out.accept(TNT.get()); out.accept(NETHER_ITEM.get()); out.accept(END_ITEM.get()); out.accept(ENCHANTER.get()); out.accept(MOB.get()); out.accept(WAND.get());
         out.accept(Items.LAVA_BUCKET); out.accept(Items.WATER_BUCKET);
         ItemStack sword = new ItemStack(Items.NETHERITE_SWORD);
         var reg = params.holders().lookupOrThrow(Registries.ENCHANTMENT);
@@ -60,7 +70,7 @@ public class UndooMod {
 
     public UndooMod(IEventBus bus) {
         ITEMS.register(bus); BLOCKS.register(bus); TABS.register(bus); COMPONENTS.register(bus);
-        Menus.register(bus);
+        Menus.register(bus); Packets.register(bus);
         NeoForge.EVENT_BUS.register(CommandBlocker.class);
     }
 }
@@ -92,3 +102,6 @@ class PortalBlock extends Block {
 }
 
 class CommandBlocker { @SubscribeEvent public static void onCmd(CommandEvent e) { if (e.getParseResults().getReader().getString().startsWith("give") && e.getParseResults().getReader().getString().contains("undoo:")) e.setCanceled(true); } }
+EOF
+
+echo ">>> ГОТОВО! Теперь загружай папку на GitHub."
