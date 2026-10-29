@@ -1,11 +1,3 @@
-#!/bin/bash
-set -e
-
-echo ">>> Создаю правильный UndooMod.java..."
-
-mkdir -p src/main/java/com/example/undoo
-
-cat > src/main/java/com/example/undoo/UndooMod.java << 'EOF'
 package com.example.undoo;
 
 import com.mojang.serialization.Codec;
@@ -102,6 +94,3 @@ class PortalBlock extends Block {
 }
 
 class CommandBlocker { @SubscribeEvent public static void onCmd(CommandEvent e) { if (e.getParseResults().getReader().getString().startsWith("give") && e.getParseResults().getReader().getString().contains("undoo:")) e.setCanceled(true); } }
-EOF
-
-echo ">>> ГОТОВО! Теперь загружай папку на GitHub."
