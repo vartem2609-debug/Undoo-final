@@ -26,12 +26,19 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.CommandEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Mod(UndooMod.MODID)
 public class UndooMod {
     public static final String MODID = "undoo";
+    
+    // Добавлено: Список сохранённых мобов
+    public static final List<SavedMob> SAVED = new CopyOnWriteArrayList<>();
+
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registries.ITEM, MODID);
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Registries.BLOCK, MODID);
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
@@ -64,6 +71,17 @@ public class UndooMod {
         ITEMS.register(bus); BLOCKS.register(bus); TABS.register(bus); COMPONENTS.register(bus);
         Menus.register(bus); Packets.register(bus);
         NeoForge.EVENT_BUS.register(CommandBlocker.class);
+        // Добавлено: регистрация экранов (чтобы GUI открывалось)
+        bus.addListener(this::registerScreens);
+    }
+
+    // Добавлено: регистрация GUI экранов
+    private void registerScreens(RegisterMenuScreensEvent e) {
+        e.register(Menus.TNT_MENU.get(), TntScreen::new);
+        e.register(Menus.ENCH_MENU.get(), EnchanterScreen::new);
+        e.register(Menus.TRADE_MENU.get(), TradeScreen::new);
+        e.register(Menus.MOB_MENU.get(), MobConstructorScreen::new);
+        e.register(Menus.SAVED_MENU.get(), SavedMobsScreen::new);
     }
 }
 
@@ -93,4 +111,4 @@ class PortalBlock extends Block {
     }
 }
 
-class CommandBlocker { @SubscribeEvent public static void onCmd(CommandEvent e) { if (e.getParseResults().getReader().getString().startsWith("give") && e.getParseResults().getReader().getString().contains("undoo:")) e.setCanceled(true); } }
+class CommandBlocker { @SubscribeEvent public static void onCmd(CommandEvent e) { if (e.getParseResults().getReader().getString().startsWith("give") && e.getParseResults().getReader().getString().contains("undoo:")) e.setCanceled(true); } } 
